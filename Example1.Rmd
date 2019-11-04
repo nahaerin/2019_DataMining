@@ -1,0 +1,207 @@
+---
+title: "Example1"
+author: "haerin na"
+output: html_document
+---
+
+# Statistical Data Mining Example 1 
+
+
+# Q1
+
+Data were generated from a mixture of Gaussian described on page 16-17 and recorded in the files ‘trainred.txt’,
+‘traingreen.txt’, ‘testred.txt’, and ‘testgreen.txt’. Load the data into your statistical software R. Each file has two columns
+representing the first and second coordinates, respectively, of the points.
+
+```{r}
+# red points from training dataset
+redpoints=read.table("trainred.txt",sep="\t",header=FALSE)
+
+# green points from training dataset
+greenpoints=read.table("traingreen.txt",sep="\t",header=FALSE)
+
+# red points from test dataset
+redtestpoints=read.table("testred.txt",sep="\t",header=FALSE)
+
+# green points from test dataset
+greentestpoints=read.table("testgreen.txt",sep="\t",header=FALSE)
+
+# Combine red and green points.
+X=rbind(redpoints,greenpoints)
+dim(X)
+
+y=c(rep(1,100),rep(0,100))
+```
+
+# Q2
+
+Plot the training data, using red to indicate the red points and green to indicate the green points.
+
+```{r}
+par(mfrow=c(1,3))
+
+plot(redpoints,col="red")
+plot(greenpoints,col="green")
+plot(X,type="n")
+
+plot(X,type="n",main='Red & Green',xlab='x1',ylab='y1')
+points(redpoints,col="red")
+points(greenpoints,col="green")
+```
+
+
+# Q3
+
+Use linear regression to fit these data as described on page 13 and find the training error rate for this method.
+
+
+```{r}
+is.matrix(X)
+
+is.data.frame(X)
+
+X=as.matrix(X)
+
+is.matrix(X)
+
+# Regression 1
+X1=cbind(rep(1,nrow(X)),X)
+beta.hat=solve(t(X1)%*%X1)%*%t(X1)%*%y
+beta.hat
+
+y.hat=X1%*%beta.hat
+y.hat
+
+# Regression 2
+rg=lm(y~X[,1]+X[,2])
+beta.hat2 = rg$coefficients
+y.hat2 = rg$fitted.values
+
+
+g.hat=as.numeric(y.hat>0.5)
+head(g.hat)
+z=sum(g.hat==y)
+training.error=1-z/200
+training.error
+```
+
+
+# Q4
+
+Create a plot similar to Figure 2.1 on page 13.
+
+```{r}
+plot(X,type="n",main='Red & Green',xlab='x1',ylab='y1')
+points(redpoints,col="red")
+points(greenpoints,col="green")
+abline((.5-beta.hat[1])/beta.hat[3],-beta.hat[2]/beta.hat[3])
+```
+
+
+# Q5
+
+Use the linear regression fit obtained from the training data to predict the color at each input value in the test set (without
+using the output values in the test set).
+
+```{r}
+X0=rbind(redtestpoints,greentestpoints)
+X0=as.matrix(X0)
+y0=c(rep(1,1000),rep(0,1000))
+X01=cbind(rep(1,2000),X0)
+y0.hat=X01%*%beta.hat
+g0.hat=as.numeric(y0.hat>0.5)
+test.error=1-sum(g0.hat==y0)/2000
+test.error
+```
+
+
+# Q6
+
+Use the k-nearest neighbor algorithm with k=1,3,7 to predict the color at each input value in the training set, and find the
+training error rate for each k.
+
+```{r}
+# Euclidean distance matrix
+D=matrix(0,200,200)
+dim(D)
+for (i in 1:200) for (j in 1:200) D[i,j]=sqrt(sum((X[i,]-X[j,])^2))
+
+# Example
+s=c(1,4,5,3)
+sort(s)
+order(s)
+
+
+D[1,]
+D[1,c(198,197)]
+order(D[1,])
+order(D[1,])[1:7]
+
+y
+y[order(D[1,])[1:7]]
+mean(y[order(D[1,])[1:7]])
+g.hat=(mean(y[order(D[1,])[1:7]])>0.5)
+g.hat
+
+# Q6.
+
+k=7
+g.hat7=rep(0,200)
+for (i in 1:200) g.hat7[i]=(mean(y[order(D[i,])[1:k]])>0.5)
+ g.hat7
+ training.error=1-sum(g.hat7==y)/200
+ training.error
+
+ 
+k=3
+g.hat3=rep(0,200)
+ for (i in 1:200) g.hat3[i]=(mean(y[order(D[i,])[1:k]])>0.5)
+ training.error=1-sum(g.hat3==y)/200
+ training.error
+
+k=1
+g.hat1=rep(0,200)
+ for (i in 1:200) g.hat1[i]=(mean(y[order(D[i,])[1:k]])>0.5)
+ training.error=1-sum(g.hat1==y)/200
+ training.error
+```
+
+
+# Q7
+
+Use the k-nearest neighbor algorithm fits obtained from the training data to predict the color at each input value in the test
+set (without using the ouput values in the test set).
+
+```{r}
+D0=matrix(0,2000,200)
+dim(D0)
+
+for (i in 1:2000) for (j in 1:200) D0[i,j]=sqrt(sum((X0[i,]-X[j,])^2))
+
+
+k=7
+g0.hat=rep(0,2000)
+for (i in 1:2000) g0.hat[i]=(mean(g.hat7[order(D0[i,])[1:k]])>0.5)
+g0.hat
+test.error=1-sum(g0.hat==y0)/2000
+test.error
+
+k=3
+g0.hat=rep(0,2000)
+for (i in 1:2000) g0.hat[i]=(mean(g.hat3[order(D0[i,])[1:k]])>0.5)
+g0.hat
+test.error=1-sum(g0.hat==y0)/2000
+test.error
+
+k=1
+g0.hat=rep(0,2000)
+for (i in 1:2000) g0.hat[i]=(mean(g.hat1[order(D0[i,])[1:k]])>0.5)
+g0.hat
+test.error=1-sum(g0.hat==y0)/2000
+test.error
+
+#why it can't upload to github?
+```
+
+
+
